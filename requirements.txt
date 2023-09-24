@@ -1,0 +1,7 @@
+pydantic==2.3.0
+pydantic_core==2.6.3
+fastapi==0.103.1
+openai==0.28.0
+nest-asyncio==1.4.2
+# pyngrok==7.0.0
+uvicorn==0.13
