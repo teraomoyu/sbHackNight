@@ -64,7 +64,14 @@ async def post_okan(request: ChatGptRequest):
 
     return post_chatgpt(request, prompt_content=prompt_content, model=model)
 
+@app.post('/ojisan/raw')
+async def post_ojisan(request: ChatGptRequest):
 
+    prompt_content = generate_ojisan_word(request.your_name)
+
+    model = "gpt-3.5-turbo-0613"
+    response = post_chatgpt(request, prompt_content=prompt_content, model=model)
+    return response
 
 @app.post('/ojisan')
 async def post_ojisan(request: ChatGptRequest):
