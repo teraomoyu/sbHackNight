@@ -11,7 +11,7 @@ class ChatGptRequest(BaseModel):
 
 class OjisanResponse(BaseModel):
     with_emojis: str
-    without_emojis: str
+    # without_emojis: str
 
 app = FastAPI()
 
@@ -73,7 +73,8 @@ async def post_ojisan(request: ChatGptRequest):
 
     model = "gpt-3.5-turbo-0613"
     response = post_chatgpt(request, prompt_content=prompt_content, model=model)
-    return OjisanResponse(with_emojis=response, without_emojis=remove_emojis(response))
+    # return OjisanResponse(with_emojis=response, without_emojis=remove_emojis(response))
+    return OjisanResponse(with_emojis=response)
 
 def post_chatgpt(request: ChatGptRequest, prompt_content: str, model: str):
     openai.organization = os.getenv("ORGANIZATION_KEY")
