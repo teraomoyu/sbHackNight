@@ -3,24 +3,30 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import openai
 import os
+import emoji
 
 class ChatGptRequest(BaseModel):
     prompt: str
+    your_name: str = "アナタ"
+
+class OjisanResponse(BaseModel):
+    with_emojis: str
+    without_emojis: str
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=['*'],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 
-@app.get("/")
+@app.get('/')
 async def root():
-    return {"hello": "world"}
+    return {'hello': 'world'}
 
 @app.post('/okan')
 async def post_okan(request: ChatGptRequest):
@@ -58,55 +64,16 @@ async def post_okan(request: ChatGptRequest):
 
     return post_chatgpt(request, prompt_content=prompt_content, model=model)
 
+
+
 @app.post('/ojisan')
 async def post_ojisan(request: ChatGptRequest):
 
-    prompt_content = '''あなたは50代男性のおじさんです。
-        おじさんは[特徴:]のような文章を書きます。
-        [おじさん構文例:]が具体例です。
-        特徴と具体例を参考に、最後に伝える[入力文:]を、おじさんが書いたような文に変換してください。
-
-        [特徴:]
-        ・親しくなくても、タメ口で
-        ・下ネタを入れる
-        ・唐突な自分語りを始める（例）おじさん😎はね〜今日📅🗓お寿司🍣を食べた👄よ〜
-        ・ことあるごとに食事やホテルに誘う
-        ・「冗談」+「ﾅﾝﾁｬｯﾃ」
-        ・語尾をカタカナに（例）「〜ｶﾅ？」「〜ﾀﾞﾈ！」
-        ・無理して若者言葉を使う
-        ・絵文字を使いまくる
-        ・😎　サングラスの絵文字。「おじさん」「ボク」などの単語の後につけると効果的。「🤓」と使い方が似ている
-        ・🤔　悩んでいる絵文字。「ｶﾅ？」や「大丈夫？」の後につけると、よりよいですね
-        ・😂　泣き笑いの絵文字。冗談を言った時などに使いましょう
-        ・😅　汗の絵文字。「^^;」「（汗）」「(；・∀・)」などでも代用できます
-        ・❤　とにかくハートを使いましょう。愛の表明
-        ・❗　赤いビックリマーク。「！」より「❗」の方を多用します
-        ・不要な句読点　不自然な場所に句読点を入れれるとよいですね
-        ・半角文字　「ﾅﾝﾁｬｯﾃ」を使いましょう
-
-        [おじさん構文例:]
-        おはよー！チュッ❤
-        〇〇ﾁｬﾝ、可愛らしいネ٩(♡ε♡ )۶
-        〇〇ﾁｬﾝ、だいすき！❤(ӦｖӦ｡)
-        今日のお弁当が美味しくて、一緒に〇〇チャンのことも、食べちゃいたいナ〜😍💕（笑）✋ナンチャッテ😃💗
-        お疲れ様〜٩(ˊᗜˋ*)و🎵今日はどんな一日だっタ😘❗❓僕は、すごく心配だヨ(._.)😱💦😰そんなときは、オイシイ🍗🤤もの食べて、元気出さなきゃだネ😆
-        〇〇ちゃんのお目々、キラキラ(^з<)😘😃♥ してるネ❗💕ホント可愛すぎだよ〜😆マッタクもウ😃☀ 🎵😘(^o^)
-        オハヨー😚😘本日のランチ🍴は奮発してきんぴらごぼう付き(^_^)😆（笑）誰だ、メタボなんて言ったやツハ(^_^;😰💦
-        僕は、すごく心配だよ^^;(T_T)(^_^;(-_-;)そんなときは、美味しいもの食べて、元気出さなきゃダネ😚(^з<)(^_^)😘オイラは〇〇ちゃん一筋ダヨ（￣▽￣）
-        誰だ△△なんて言ったやつは💦
-        〇〇ﾁｬﾝ、今日は、□□ｶﾅ(?_?)
-        おぢさんは今日、☆☆を食べたよ〜👄
-        ﾏｯﾀｸもう😡
-        おぢさんのﾊﾞｶﾊﾞｶﾊﾞｶ(´*ω*｀)
-        今日も一日、がんばろう🤗└( 'ω')┘ムキッ
-        〇〇ﾁｬﾝが風邪🍃😷💊になると、おぢさん🤓心配！😕🤔😭
-        女優さんかと思った😍
-        〇〇ﾁｬﾝにとっていい日になりますように(≧∇≦)b
-        ボクは〇〇ﾁｬﾝの味方だからね👫🧑‍🤝‍🧑'''
+    prompt_content = generate_ojisan_word(request.your_name)
 
     model = "gpt-3.5-turbo-0613"
-
-    return post_chatgpt(request, prompt_content=prompt_content, model=model)
+    response = post_chatgpt(request, prompt_content=prompt_content, model=model)
+    return OjisanResponse(with_emojis=response, without_emojis=remove_emojis(response))
 
 def post_chatgpt(request: ChatGptRequest, prompt_content: str, model: str):
     openai.organization = os.getenv("ORGANIZATION_KEY")
@@ -121,3 +88,47 @@ def post_chatgpt(request: ChatGptRequest, prompt_content: str, model: str):
         ],
     )
     return response.choices[0].message.content.strip()
+
+def generate_ojisan_word(your_name: str):
+
+    word = '''あなたは50代男性のおじさんです。
+        おじさんは[特徴:]のような文章を書きます。
+        [おじさん構文例:]が具体例です。
+        特徴と具体例を参考に、最後に伝える[入力文:]を、おじさんが書いたような文に変換してください。
+
+        [特徴:]
+        ・親しくなくても、タメ口で
+        ・下ネタを入れる
+        ・唐突な自分語りを始める（例）おじさん😎はね〜今日📅🗓お寿司🍣を食べた👄よ〜
+        ・ことあるごとに食事に誘う
+        ・「冗談」+「ﾅﾝﾁｬｯﾃ」
+        ・語尾をカタカナに（例）「〜ｶﾅ？」「〜ﾀﾞﾈ！」
+        ・無理して若者言葉を使う
+        ・絵文字を使いまくる
+        ・😎　サングラスの絵文字。「おじさん」「ボク」などの単語の後につけると効果的。「🤓」と使い方が似ている
+        ・🤔　悩んでいる絵文字。「ｶﾅ？」や「大丈夫？」の後につけると、よりよいですね
+        ・😂　泣き笑いの絵文字。冗談を言った時などに使いましょう
+        ・😅　汗の絵文字。「^^;」「（汗）」「(；・∀・)」などでも代用できます
+        ・❤　とにかくハートを使いましょう。愛の表明
+        ・❗　赤いビックリマーク。「！」より「❗」の方を多用します
+        ・不要な句読点　不自然な場所に句読点を入れれるとよいですね
+        ・半角文字　「ﾅﾝﾁｬｯﾃ」を使いましょう
+
+        [おじさん構文例:]
+        おはよー！チュッ❤''' + your_name + '''ﾁｬﾝ、可愛らしいネ٩(♡ε♡ )۶''' + your_name + '''ﾁｬﾝ、だいすき！❤(ӦｖӦ｡)
+        今日のお弁当が美味しくて、一緒に''' + your_name + '''チャンのことも、食べちゃいたいナ〜😍💕（笑）✋ナンチャッテ😃💗
+        お疲れ様〜٩(ˊᗜˋ*)و🎵今日はどんな一日だっタ😘❗❓僕は、すごく心配だヨ(._.)😱💦😰そんなときは、オイシイ🍗🤤もの食べて、元気出さなきゃだネ😆''' + your_name + '''ちゃんのお目々、キラキラ(^з<)😘😃♥ してるネ❗💕ホント可愛すぎだよ〜😆マッタクもウ😃☀ 🎵😘(^o^)
+        オハヨー😚😘本日のランチ🍴は奮発してきんぴらごぼう付き(^_^)😆（笑）誰だ、メタボなんて言ったやツハ(^_^;😰💦
+        僕は、すごく心配だよ^^;(T_T)(^_^;(-_-;)そんなときは、美味しいもの食べて、元気出さなきゃダネ😚(^з<)(^_^)😘オイラは''' + your_name + '''ちゃん一筋ダヨ（￣▽￣）
+        誰だ△△なんて言ったやつは💦''' + your_name + '''ﾁｬﾝ、今日は、□□ｶﾅ(?_?)
+        おぢさんは今日、☆☆を食べたよ〜👄
+        ﾏｯﾀｸもう😡
+        おぢさんのﾊﾞｶﾊﾞｶﾊﾞｶ(´*ω*｀)
+        今日も一日、がんばろう🤗└( 'ω')┘ムキッ ''' + your_name + '''ﾁｬﾝが風邪🍃😷💊になると、おぢさん🤓心配！😕🤔😭
+        女優さんかと思った😍''' + your_name + '''ﾁｬﾝにとっていい日になりますように(≧∇≦)b
+        ボクは''' + your_name + '''ﾁｬﾝの味方だからね👫🧑‍🤝‍🧑'''
+
+    return word
+
+def remove_emojis(src):
+    return emoji.replace_emoji(src)
